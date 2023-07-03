@@ -20,3 +20,9 @@ The output will give you the volume of sample needed for the desired amount of p
 ## Western Blot Mixture
 
 This assay also allows for the quick construction of Western Blot Assay prep. To begin, follow the steps above. Change the amount of protein desired for each WB well, and the total volume desired for the WB well. If using RIPA, check the box and change volume of RIPA. Last, select the Laemmmli Buffer Concentration.
+
+## Changing Sample Names
+
+Sample names can be changed under the 'Sample Names' tab. These will show up when exporting an Excel file (via 'Download' buttons).
+
+![image](https://github.com/stdecker/ProteinQuantification-BCA-Western/assets/35308658/42f1c5e0-0034-4abf-aa27-7bc5a5ed6de3)
