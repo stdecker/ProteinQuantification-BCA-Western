@@ -6,6 +6,7 @@
 #
 #    http://shiny.rstudio.com/
 #
+#  Built by Stephen Decker. Free to use, please contact me with inquiries.
 
 library(shiny)
 
@@ -19,6 +20,16 @@ ui <- fluidPage(titlePanel("BCA Protein Analysis & Western Blot Prep"),
                                min = 1,
                                max = 10000,
                                value = 75),
+                  numericInput("protein2",
+                               "Second Desired Amount of Protein per Alliquot (\u03BCg)",
+                               min = 1,
+                               max = 10000,
+                               value = 5),
+                  numericInput("protein3",
+                               "ThirdDesired Amount of Protein per Alliquot (\u03BCg)",
+                               min = 1,
+                               max = 10000,
+                               value = 100),
                   numericInput("std_min",
                                "Minimum Standard Concentration",
                                min = 0,
@@ -40,16 +51,16 @@ ui <- fluidPage(titlePanel("BCA Protein Analysis & Western Blot Prep"),
                                max = 10000,
                                value = 2),
                   numericInput("wbpro",
-                               "Amount of Protein Desired for Western Blot (\u03BCg)",
+                               "Protein in Final WB Preparation Solution (\u03BCg)",
                                min = 0,
                                max = 10000,
                                value = 90),
                   numericInput("wb",
-                               "Volume Desired for Western Blot (\u03BCL)",
+                               "Volume of Final WB Preparation Solution (\u03BCL)",
                                min = 0,
                                max = 10000,
                                value = 90),
-                  checkboxInput("ripabox", "Check if set volume of RIPA is needed"),
+                  checkboxInput("ripabox", "Check if no added buffer is needed"),
                   numericInput("ripa",
                                "Volume Desired for RIPA (\u03BCL)",
                                min = 0,
@@ -66,7 +77,7 @@ ui <- fluidPage(titlePanel("BCA Protein Analysis & Western Blot Prep"),
                     tabPanel("Raw Data", tableOutput('raw')),
                     tabPanel("Sample Protein Concentration (\u03BCg/mL)", tableOutput('content')),
                     tabPanel("Linear Model", verbatimTextOutput('model')),
-                    tabPanel( "Sample Names",
+                    tabPanel("Sample Names",
                       textInput("sample1", "Sample 1 Name"),
                       textInput("sample2", "Sample 2 Name"),
                       textInput("sample3", "Sample 3 Name"),
@@ -197,6 +208,7 @@ server <- function(input, output) {
     
     content_table <- cbind(Sample1, Sample2, Sample3, Sample4, Sample5, Sample6, Sample7, Sample8, Sample9, Sample10, Sample11, Sample12, Sample13, Sample14, Sample15, Sample16, Sample17, Sample18)
     
+    
     bca_table <- 1/(content_table/input$protein)
     
     colnames(bca_table) <- c(paste(input$sample1),paste(input$sample2),paste(input$sample3),paste(input$sample4),paste(input$sample5),
@@ -208,7 +220,37 @@ server <- function(input, output) {
     
     bca_table <- t(bca_table[, colSums(is.na(bca_table)) != nrow(bca_table)])
     
-    thedata <- reactive(bca_table)
+    bca1 <- merge(data.frame(Amount = paste(input$protein, "\u03BCg")), bca_table)
+    
+    bca_table2 <- 1/(content_table/input$protein2)
+    
+    colnames(bca_table2) <- c(paste(input$sample1),paste(input$sample2),paste(input$sample3),paste(input$sample4),paste(input$sample5),
+                             paste(input$sample6),paste(input$sample7),paste(input$sample8),paste(input$sample9),paste(input$sample10),
+                             paste(input$sample11),paste(input$sample12),paste(input$sample13),paste(input$sample14),paste(input$sample15),
+                             paste(input$sample16),paste(input$sample17),paste(input$sample18))
+    
+    bca_table2 <- replace(bca_table2, which(bca_table2 < 0), NA)
+    
+    bca_table2 <- t(bca_table2[, colSums(is.na(bca_table2)) != nrow(bca_table2)])
+    
+    bca2 <- merge(data.frame(Amount = paste(input$protein2, "\u03BCg")), bca_table2)
+    
+    bca_table3 <- 1/(content_table/input$protein3)
+    
+    colnames(bca_table3) <- c(paste(input$sample1),paste(input$sample2),paste(input$sample3),paste(input$sample4),paste(input$sample5),
+                              paste(input$sample6),paste(input$sample7),paste(input$sample8),paste(input$sample9),paste(input$sample10),
+                              paste(input$sample11),paste(input$sample12),paste(input$sample13),paste(input$sample14),paste(input$sample15),
+                              paste(input$sample16),paste(input$sample17),paste(input$sample18))
+    
+    bca_table3 <- replace(bca_table3, which(bca_table3 < 0), NA)
+    
+    bca_table3 <- t(bca_table3[, colSums(is.na(bca_table3)) != nrow(bca_table3)])
+    
+    bca3 <- merge(data.frame(Amount = paste(input$protein3, "\u03BCg")), bca_table3)
+    
+    bca_table_comb <- rbind(bca1, bca2, bca3)
+    
+    thedata <- reactive(bca_table_comb)
     
     
     output$download_bca <- downloadHandler(
@@ -218,7 +260,7 @@ server <- function(input, output) {
       }
     )
     
-    bca_table
+    bca_table_comb
     
   }, hover = TRUE, striped = T, bordered = T, align = "c", caption = "Volume for Selected Protein Content (\u03BCL)")
   
@@ -243,7 +285,7 @@ server <- function(input, output) {
     
     summary(lm(std_table$Means ~ std_table$BSA))})
   
-  output$western <- renderTable({
+  wb_data <- reactive({ 
     inFile <- input$file1
     if (is.null(inFile))
       return(NULL)
@@ -292,7 +334,7 @@ server <- function(input, output) {
     
     wb_table <- data.frame(t(content_table))
     
-    wb_table$vol_sample <- (input$wb/wb_table)
+    wb_table$vol_sample <- (input$wbpro/wb_table)
     
     colnames(wb_table) <- c("Sample Protein Concentration", "Sample Volume")
     
@@ -303,53 +345,59 @@ server <- function(input, output) {
     
     wb_table <- wb_table |> dplyr::select('Sample ID', everything())
     
-    wb_table$`Buffer Volume` <- (max(wb_table$`Sample Volume`) - wb_table$`Sample Volume`)/(input$wbpro/input$wb)
-    
-    wb_table$`Total Volume` <- input$wb
-    
     for(k in input$ripabox){
       
-      if(k == TRUE){
+      if(k == FALSE){
         
         wb_table$`RIPA Volume` <- input$ripa
-      
+        
       for(i in input$lsb){
         if(i == "2X"){
-          lsb_vol <- wb_table$`Sample Volume`
+          wb_table$`Buffer Volume` <- input$wb/(2/1) - wb_table$`Sample Volume` - wb_table$`RIPA Volume`
+          lsb_vol <- input$wb/2
         }
         
         if(i == "4X"){
-          lsb_vol <- ((wb_table$`Sample Volume` + wb_table$`Buffer Volume` + wb_table$`RIPA Volume`)/3)
+          wb_table$`Buffer Volume` <- input$wb/(4/3) - wb_table$`Sample Volume` - wb_table$`RIPA Volume`
+          lsb_vol <- input$wb/4
         }
         
         if(i == "6X"){
-          lsb_vol <- ((wb_table$`Sample Volume` + wb_table$`Buffer Volume` + wb_table$`RIPA Volume`)/5)
+          wb_table$`Buffer Volume` <- input$wb/(6/5) - wb_table$`Sample Volume` - wb_table$`RIPA Volume`
+          lsb_vol <- input$wb/6
         }
       }
       
       }
       
       
-      if(k == FALSE){
+      if(k == TRUE){
         for(i in input$lsb){
           if(i == "2X"){
-            wb_table$`RIPA Volume` <- (input$wb - wb_table$`Sample Volume` + wb_table$`Buffer Volume`)/2
+            wb_table$`RIPA Volume` <- 0
+            
+            wb_table$`Buffer Volume` <- (input$wb/2) - wb_table$`Sample Volume`
             
             lsb_vol <- input$wb/2
             
          }
         
           if(i == "4X"){
-            wb_table$`RIPA Volume` <- ((3/4)*input$wb) - wb_table$`Sample Volume` - wb_table$`Buffer Volume`
+            wb_table$`RIPA Volume` <- 0
             
-            lsb_vol <- (1/4)*input$wb
+            wb_table$`Buffer Volume` <- (input$wb*(3/4)) - wb_table$`Sample Volume`
+            
+            
+            lsb_vol <- input$wb/4
             
           }
         
           if(i == "6X"){
-            wb_table$`RIPA Volume` <- ((5/6)*input$wb) - wb_table$`Sample Volume` - wb_table$`Buffer Volume`
+            wb_table$`RIPA Volume` <- 0
             
-            lsb_vol <- (1/6)*input$wb
+            wb_table$`Buffer Volume` <- (input$wb*(5/6)) - wb_table$`Sample Volume`
+            
+            lsb_vol <- input$wb/6
           }
         
           
@@ -359,17 +407,37 @@ server <- function(input, output) {
     }
     }
         wb_table$`Laemmli Buffer Volume` <- lsb_vol
-
+        
+        wb_table$`Final Protein Concentration` <- input$wbpro/input$wb
  
         wb_table$`Total Volume` <- wb_table$`Sample Volume` + wb_table$`Buffer Volume` + wb_table$`RIPA Volume` + wb_table$`Laemmli Buffer Volume`
 
         wb_table$`Sample Protein Concentration` <- replace(wb_table$`Sample Protein Concentration`, which(wb_table$`Sample Protein Concentration` < 0), NA)
         
+        colnames(wb_table) <- c('Sample ID', paste0('Sample Protein Concentration (\u03BCg', '/', '\u03BCL)'), 'Sample Volume (\u03BCL)', 'Added Buffer Volume (\u03BCL)', 'Buffer Volume (\u03BCL)', 'Laemmli Buffer Volume (\u03BCL)',  paste0('Final Protein Concentration (\u03BCg', '/', '\u03BCL)'), 'Total Volume (\u03BCL)')
+        
 
-    na.omit(wb_table)
-    
-  }, hover = TRUE, striped = T, bordered = T, align = "c", caption = "All volumes are in \u03BCL")
+   wb_table <- na.omit(wb_table)
+   return(wb_table)
+   
+
+
+  })
   
+  
+  output$western <- renderTable({
+    
+    wb_data()
+    
+  }, hover = TRUE, striped = T, bordered = T, align = "c", caption = "Added buffer examples: RIPA, NaCl, etc.")
+  
+  
+  output$download_wb <- downloadHandler(
+    filename = function() {paste("WB_analysis_",Sys.Date(),".csv", sep = "")}, 
+    content = function(fname){
+      write.csv(exportedwb_data(), fname, col.names = TRUE, row.names = FALSE)
+    }
+  )
   
 }
 
