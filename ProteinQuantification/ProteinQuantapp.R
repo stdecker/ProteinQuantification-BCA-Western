@@ -6,12 +6,12 @@
 #
 #    http://shiny.rstudio.com/
 #
-#  Built by Stephen Decker. Free to use, please contact me with inquiries.
 
 library(shiny)
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(titlePanel("BCA Protein Analysis & Western Blot Prep"),
+ui <- fluidPage(navbarPage("BCA Protein Analysis & Western Blot Prep",
+                tabPanel("Analysis", fluid = TRUE, icon = icon('calculator'),
                 sidebarLayout(sidebarPanel(
                   fileInput('file1', 'Choose xlsx file',
                             accept = c(".xlsx", ".csv")),
@@ -100,7 +100,23 @@ ui <- fluidPage(titlePanel("BCA Protein Analysis & Western Blot Prep"),
                   downloadButton('download_wb',"Download Western Blot Data"),
                   )
                 )
-                )
+                ),
+                tabPanel("User Guide", fluid = TRUE, icon = icon('book-open'), 
+                         fluidRow(
+                  h2(HTML("<b>Instructions</b>")),
+                  h5(HTML("<p>For version control and other questions, see my <a href='https://github.com/stdecker/ProteinQuantification-BCA-Western'>GitHub repo</a>.</p>")),
+                  h4(HTML("<b>Uploading Data</b>")),
+                  h5(HTML("Note: <b>Before uploading, data must be in the format described on my GitHub Repo (see above).</b>")),
+                  h5("Upload data using the 'Choose xlsx File'"),
+                  h4(HTML("<b>Adjusting Parameters</b>")),
+                  h5("Adjust necessary parameters using the input selections given on the left of the page."),
+                  h4(HTML("<b>Naming Samples</b>")),
+                  h5("Samples can be named using the 'Sample Names' tab and typing in the names of each corresponding sample."),
+                  h4(HTML("<b>Saving and Downloading Data</b>")),
+                  h5("After data have been checked and verified, select the 'Download Final Data' button. This will prompt a new window where you can rename the CSV file and save it onto your local system. 
+                     Hit save. The data should be stored in the selected location and the app may now be closed.")
+                  )
+)))
 
 server <- function(input, output) {
   output$raw <- renderTable({
