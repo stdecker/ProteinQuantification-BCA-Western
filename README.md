@@ -3,6 +3,10 @@ Protein Quantification Following Standard BCA Assay. This app allows for quick q
 
 ![image](https://github.com/stdecker/ProteinQuantification-BCA-Western/assets/35308658/03f31cf6-c395-4be5-b1e3-45897594a98e)
 
+## Shinyapps.io
+
+This app may be found and used on Shinyapps.io. To use the app, follow this link [https://deckerst.shinyapps.io/ProteinQuantification/](https://deckerst.shinyapps.io/ProteinQuantification/).
+
 ## Volume of Sample for Desired Amount of Protein
 
 This assay is run using R/RStudio and Shiny. Please make sure all necessary packages are installed (readxl, shiny) using `install.packages('readxl', 'shiny')` before running the program. Once installed, highlight all (Ctrl + A) and run (Ctrl + Enter). Shiny should pop up. 
@@ -26,3 +30,5 @@ This assay also allows for the quick construction of Western Blot Assay prep. To
 Sample names can be changed under the 'Sample Names' tab. These will show up when exporting an Excel file (via 'Download' buttons).
 
 ![image](https://github.com/stdecker/ProteinQuantification-BCA-Western/assets/35308658/42f1c5e0-0034-4abf-aa27-7bc5a5ed6de3)
+
+
