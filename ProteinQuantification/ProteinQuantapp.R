@@ -348,9 +348,11 @@ server <- function(input, output) {
                                  paste(input$sample11),paste(input$sample12),paste(input$sample13),paste(input$sample14),paste(input$sample15),
                                  paste(input$sample16),paste(input$sample17),paste(input$sample18))
     
-    wb_table <- data.frame(t(content_table))
+    pro_concentrarion <- t(content_table)
     
-    wb_table$vol_sample <- (input$wbpro/wb_table)
+    vol_sample <- (input$wbpro/pro_concentrarion)
+    
+    wb_table <- data.frame(pro_concentrarion, vol_sample)
     
     colnames(wb_table) <- c("Sample Protein Concentration", "Sample Volume")
     
@@ -430,7 +432,7 @@ server <- function(input, output) {
 
         wb_table$`Sample Protein Concentration` <- replace(wb_table$`Sample Protein Concentration`, which(wb_table$`Sample Protein Concentration` < 0), NA)
         
-        colnames(wb_table) <- c('Sample ID', paste0('Sample Protein Concentration (\u03BCg', '/', '\u03BCL)'), 'Sample Volume (\u03BCL)', 'Added Buffer Volume (\u03BCL)', 'Buffer Volume (\u03BCL)', 'Laemmli Buffer Volume (\u03BCL)',  paste0('Final Protein Concentration (\u03BCg', '/', '\u03BCL)'), 'Total Volume (\u03BCL)')
+        colnames(wb_table) <- c('Sample ID', paste0('Sample Protein Concentration (μg', '/', 'μL)'), 'Sample Volume (μL)', 'Added Buffer Volume (μL)', 'Buffer Volume (μL)', 'Laemmli Buffer Volume (μL)',  paste0('Final Protein Concentration (μg', '/', 'μL)'), 'Total Volume (μL)')
         
 
    wb_table <- na.omit(wb_table)
@@ -451,7 +453,7 @@ server <- function(input, output) {
   output$download_wb <- downloadHandler(
     filename = function() {paste("WB_analysis_",Sys.Date(),".csv", sep = "")}, 
     content = function(fname){
-      write.csv(exportedwb_data(), fname, col.names = TRUE, row.names = FALSE)
+      write.csv(wb_data(), fname, col.names = TRUE, row.names = FALSE)
     }
   )
   
